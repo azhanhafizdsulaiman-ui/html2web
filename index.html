@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>html2web >_ - Buat Website dari HTML</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+.blink{animation:blink 1s infinite}
+/* Loading Screen */
+#loadingScreen{position:fixed;inset:0;background:#0a0a0a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s ease}
+.loading-icon{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:48px;background:#fff;color:#000;padding:8px 16px;border-radius:12px;line-height:1}
+.loading-name{margin-top:16px;font-weight:800;font-size:24px;letter-spacing:-1px}
+.loading-bar-wrap{margin-top:32px;width:200px}
+.loading-track{height:2px;background:#222;border-radius:999px;overflow:hidden}
+.loading-fill{height:100%;background:#fff;transition:width .1s linear}
+.loading-text{margin-top:8px;font-size:10px;color:#888;text-align:center;letter-spacing:1px}
+/* Header */
+.header{border-bottom:1px solid #222;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;background:#0a0a0a;position:sticky;top:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800}
+.logo-badge{font-family:'JetBrains Mono',monospace;background:#fff;color:#000;padding:4px 8px;border-radius:8px;font-size:14px;font-weight:800}
+.btn-white{background:#fff;color:#000;border:none;padding:10px 20px;border-radius:999px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-white:hover{transform:scale(1.02)}
+.btn-outline{background:transparent;color:#fff;border:1px solid #2a2a2a;padding:10px 20px;border-radius:999px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-outline:hover{border-color:#fff}
+/* Cards */
+.card{background:#171717;border:1px solid #2a2a2a;border-radius:16px;padding:20px;margin:16px}
+.label{font-size:10px;color:#888;letter-spacing:1.2px;margin-bottom:8px;font-weight:600}
+.input-big{background:transparent;border:none;border-bottom:1px solid #333;color:#fff;font-size:28px;font-weight:800;width:100%;padding:8px 0;outline:none;transition:.2s}
+.input-big:focus{border-color:#fff}
+.input-slug{background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 14px;color:#fff;width:100%;margin-top:8px;outline:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.upload-zone{border:2px dashed #333;border-radius:16px;padding:24px;text-align:center;background:#0f0f0f;transition:.2s}
+.upload-zone.dragover{border-color:#fff;background:#171717}
+.btn-upload{background:#fff;color:#000;border:none;padding:12px 22px;border-radius:999px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin:6px 4px;font-size:13px}
+.btn-upload-outline{background:transparent;color:#fff;border:1px solid #333;padding:12px 22px;border-radius:999px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin:6px 4px;font-size:13px;transition:.2s}
+.btn-upload-outline:hover{border-color:#fff}
+.btn-clear{color:#888;border-color:#333}
+.btn-clear:hover{color:#ff4444;border-color:#ff4444;background:rgba(255,68,68,.05)}
+.editor{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:12px;color:#e5e5e5;font-family:'JetBrains Mono',monospace;font-size:13px;padding:16px;min-height:360px;resize:vertical;outline:none;line-height:1.5}
+.preview-wrap{border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;background:#111;display:flex;flex-direction:column}
+.preview-bar{background:#171717;padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #2a2a2a;flex-wrap:wrap}
+.dot{width:10px;height:10px;border-radius:50%;background:#333}
+.url-bar{background:#0a0a0a;border:1px solid #2a2a2a;border-radius:20px;padding:4px 12px;font-size:11px;color:#888;flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+iframe{width:100%;height:480px;border:none;background:#fff;flex:1}
+.badge{font-size:11px;color:#888}
+.file-card{background:#0a0a0a;border:1px solid #2a2a2a;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.sticky{position:sticky;bottom:0;background:#171717;border-top:1px solid #2a2a2a;padding:14px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;z-index:5}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal.active{display:flex}
+.modal-box{background:#171717;border:1px solid #2a2a2a;border-radius:20px;padding:24px;max-width:520px;width:100%}
+.link-input{background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:12px;width:100%;color:#fff;margin:12px 0;font-size:12px}
+/* Footer Medsos */
+.footer{margin-top:auto;border-top:1px solid #222;padding:40px 24px;background:#0a0a0a;text-align:center}
+.footer-title{font-size:10px;letter-spacing:2px;color:#666;margin-bottom:20px;font-weight:600}
+.medsos-row{display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap}
+.medsos-btn{display:flex;align-items:center;text-decoration:none;overflow:hidden;height:60px;width:60px;border-radius:30px;box-shadow:0 4px 10px rgba(0,0,0,.2);transition:all .4s cubic-bezier(.4,0,.2,1);cursor:pointer;position:relative}
+.medsos-btn .icon-box{display:flex;justify-content:center;align-items:center;width:60px;height:60px;border-radius:50%;flex-shrink:0;transition:transform .4s ease}
+.medsos-btn svg{width:26px;height:26px;fill:#fff}
+.medsos-btn .text{font-size:14px;font-weight:700;color:#fff;white-space:nowrap;padding-right:20px;opacity:0;transform:translateX(-10px);transition:all .35s ease}
+.medsos-btn.expanded{width:180px}
+.medsos-btn.expanded .text{opacity:1;transform:translateX(0);padding-left:8px}
+.medsos-btn.expanded .icon-box{transform:rotate(360deg)}
+.whatsapp{background:#25D366}.whatsapp .icon-box{background:#20ba5a}
+.instagram{background:#E1306C}.instagram .icon-box{background:#c6255b}
+.youtube{background:#FF0000}.youtube .icon-box{background:#cc0000}
+.footer-copy{margin-top:24px;font-size:11px;color:#444}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="loading-icon">><span class="blink">_</span></div>
+  <div class="loading-name">html2web</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-track"><div id="loadingFill" class="loading-fill" style="width:0%"></div></div>
+    <div id="loadingText" class="loading-text">0% MEMUAT...</div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="logo"><div class="logo-badge">><span class="blink">_</span></div><span>html2web</span></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn-outline" onclick="clearCode()">🗑️ Clear</button>
+    <button class="btn-white" onclick="publish()">Publish →</button>
+  </div>
+</div>
+
+<div class="card">
+<div class="grid2">
+<div>
+<div class="label">NAMA WEBSITE</div>
+<input id="siteName" class="input-big" placeholder="Untitled website..." value="Website Saya" oninput="updateSlug()">
+<div class="badge" style="margin-top:8px">Judul tab browser</div>
+</div>
+<div>
+<div class="label">NAMA URL / SLUG</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span style="color:#666;font-size:13px">html2web.site/</span>
+<input id="slug" class="input-slug" style="flex:1" value="website-saya" placeholder="website-saya">
+</div>
+<div class="badge" style="margin-top:8px" id="urlPreview">html2web.site/website-saya</div>
+</div>
+</div>
+</div>
+
+<div class="card grid2">
+<div>
+<div class="label">KODE HTML ANDA • <button onclick="loadSample()" style="background:none;border:none;color:#888;font-size:11px;cursor:pointer;text-decoration:underline">Contoh</button> • <button onclick="clearCode()" style="background:none;border:none;color:#ff6666;font-size:11px;cursor:pointer;text-decoration:underline">Clear 🗑️</button></div>
+
+<div id="uploadZone" class="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+<div style="font-size:36px;margin-bottom:8px">📄</div>
+<div style="font-weight:600;margin-bottom:4px;font-size:14px">Upload file HTML</div>
+<div style="font-size:11px;color:#666;margin-bottom:14px">Drop file di sini atau pilih dari device</div>
+<input type="file" id="fileInput" accept=".html,.htm,text/html,.txt,*/*" style="display:none" onchange="handleFileSelect(event)">
+<button type="button" class="btn-upload" onclick="document.getElementById('fileInput').click()">📁 Pilih File HTML</button>
+<button type="button" class="btn-upload-outline" onclick="document.getElementById('fileInput').click()">📂 Dari Google Drive / Files</button>
+<div style="font-size:10px;color:#555;margin-top:10px">Di Android picker muncul: File Manager, Drive Saya, Google Drive, Downloads</div>
+<div id="fileInfo" style="display:none"></div>
+</div>
+
+<textarea id="editor" class="editor" placeholder="Tempel kode HTML lu di sini..."><!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Website Saya</title>
+<style>
+body{font-family:Inter,sans-serif;padding:0;margin:0;background:#fff;color:#111}
+.hero{padding:80px 24px;text-align:center;max-width:800px;margin:0 auto}
+.hero h1{font-size:56px;letter-spacing:-3px;line-height:0.9;margin-bottom:20px}
+.hero p{color:#666;font-size:18px;margin-bottom:32px}
+.btn{background:#111;color:#fff;padding:14px 28px;border-radius:999px;text-decoration:none;display:inline-block;font-weight:600}
+.features{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;padding:24px;max-width:1000px;margin:0 auto}
+.card{border:1px solid #eee;border-radius:16px;padding:20px}
+@media(max-width:700px){.hero h1{font-size:36px}.features{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="hero">
+<h1>Toko Online<br>Siap Jualan 🔥</h1>
+<p>Website ini dibuat dengan html2web >_ full page berfungsi 100%</p>
+<a class="btn" href="#produk">Lihat Produk</a>
+</div>
+<div class="features" id="produk">
+<div class="card"><h3>⚡ Cepat</h3><p>Loading super cepat, SEO ready</p></div>
+<div class="card"><h3>📱 Responsive</h3><p>Otomatis menyesuaikan HP & Laptop</p></div>
+<div class="card"><h3>🔗 Link Aktif</h3><p>Semua tombol & link berfungsi</p></div>
+</div>
+</body>
+</html></textarea>
+<div class="badge"><span id="charCount">0</span> karakter • <span id="fileSize">0 kb</span> • <button onclick="clearCode()" style="background:none;border:none;color:#888;font-size:11px;cursor:pointer">Clear kode 🗑️</button></div>
+</div>
+
+<div>
+<div class="label">PREVIEW INTERAKTIF • <span id="previewName">Website Saya</span> • Semua link bisa dipencet</div>
+<div class="preview-wrap">
+<div class="preview-bar">
+<div class="dot"></div><div class="dot"></div><div class="dot"></div>
+<div class="url-bar" id="previewUrl">html2web.site/website-saya</div>
+<div style="display:flex;gap:6px">
+<button type="button" class="btn-upload-outline" style="padding:6px 10px;font-size:11px" onclick="openFullPage()">↗ Buka Full Page</button>
+<button type="button" class="btn-upload-outline" style="padding:6px 10px;font-size:11px" onclick="copyPreviewLink()">🔗 Salin</button>
+</div>
+</div>
+<iframe id="previewFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-pointer-lock allow-popups-to-escape-sandbox"></iframe>
+</div>
+<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" class="btn-upload-outline" style="flex:1;justify-content:center" onclick="downloadHTML()">⬇ Download .html (Full Functional)</button>
+<button type="button" class="btn-upload-outline btn-clear" style="justify-content:center" onclick="clearCode()">🗑️ Clear Kode HTML</button>
+</div>
+<div style="margin-top:8px;font-size:11px;color:#555">Preview bisa dipencet, semua link & tombol berfungsi. Klik "Buka Full Page" untuk tes jadi web beneran.</div>
+</div>
+</div>
+
+<div class="sticky">
+<div><span style="color:#666;font-size:11px">Siap publish → </span><span id="stickyUrl" style="font-size:12px">html2web.site/website-saya</span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button type="button" class="btn-outline" onclick="clearCode()">🗑️ Clear</button>
+<button type="button" class="btn-outline" onclick="downloadHTML()">Download</button>
+<button type="button" class="btn-white" onclick="publish()">Publish Website →</button>
+</div>
+</div>
+
+<!-- FOOTER MEDSOS PALING BAWAH -->
+<footer class="footer">
+<div class="footer-title">HUBUNGI SAYA — LEWATI TENGAH UNTUK BUKA</div>
+<div class="medsos-row" id="medsosRow">
+  <a href="https://wa.me/6281234567890" target="_blank" class="medsos-btn whatsapp" id="btn-wa" data-id="wa">
+    <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M19.05 4.91A9.82 9.82 0 0 0 12.03 2C6.57 2 2.1 6.47 2.1 11.93c0 1.75.46 3.45 1.33 4.95L2 22l5.25-1.38a9.83 9.83 0 0 0 4.78 1.22h.01c5.46 0 9.93-4.47 9.93-9.93a9.87 9.87 0 0 0-2.92-6.99zm-7.02 13.6h-.01a8.18 8.18 0 0 1-4.17-1.14l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.25-8.25 8.25zm4.52-6.17c-.25-.12-1.47-.73-1.7-.81-.23-.09-.4-.12-.57.12s-.66.81-.81.98c-.15.17-.3.19-.55.07-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.38-1.72-.15-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.16-.25.25-.42.08-.17.04-.31-.02-.43-.07-.12-.57-1.37-.78-1.88-.21-.49-.42-.43-.57-.43h-.49c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07s.89 2.4 1.01 2.57c.12.17 1.75 2.67 4.24 3.75.59.25 1.05.4 1.41.51.59.19 1.13.16 1.55.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.23-.17-.48-.29z"/></svg></div>
+    <span class="text">WhatsApp</span>
+  </a>
+  <a href="https://instagram.com" target="_blank" class="medsos-btn instagram" id="btn-ig" data-id="ig">
+    <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.69 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.69-4.92-4.92C2.16 15.58 2.15 15.2 2.15 12s.01-3.58.07-4.85C2.37 3.92 3.89 2.38 7.14 2.23 8.41 2.16 8.79 2.16 12 2.16zM12 0C8.74 0 8.33.01 7.05.07 2.7.23.23 2.7.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.16 4.35 2.63 6.82 6.98 6.98C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c4.35-.16 6.82-2.63 6.98-6.98.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95C23.77 2.7 21.3.23 16.95.07 15.67.01 15.26 0 12 0zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.41-10.35a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/></svg></div>
+    <span class="text">Instagram</span>
+  </a>
+  <a href="https://youtube.com" target="_blank" class="medsos-btn youtube" id="btn-yt" data-id="yt">
+    <div class="icon-box"><svg viewBox="0 0 24 24"><path d="M23 12s0-3.85-.48-5.71a2.8 2.8 0 0 0-1.97-1.97C18.85 4 12 4 12 4s-6.85 0-8.55.32A2.8 2.8 0 0 0 1.48 6.29C1 8.15 1 12 1 12s0 3.85.48 5.71a2.8 2.8 0 0 0 1.97 1.97C5.15 20 12 20 12 20s6.85 0 8.55-.32a2.8 2.8 0 0 0 1.97-1.97C23 15.85 23 12 23 12zm-13.2 3.58V8.42L16.5 12l-6.7 3.58z"/></svg></div>
+    <span class="text">YouTube</span>
+  </a>
+</div>
+<div class="footer-copy">© html2web >_ • Full Page Berfungsi • Pekanbaru</div>
+</footer>
+
+<!-- MODAL PUBLISH -->
+<div id="modal" class="modal">
+<div class="modal-box">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<h2 style="font-size:20px">Website Live! ●</h2>
+<button onclick="closeModal()" style="background:transparent;border:none;color:#888;font-size:20px;cursor:pointer">✕</button>
+</div>
+<p style="color:#888;font-size:13px;margin-top:8px">Link ini bisa dibuka semua orang - full page berfungsi</p>
+<div class="label" style="margin-top:16px">URL PUBLIK - FULL FUNCTIONAL</div>
+<input id="publicLink" class="link-input" readonly>
+<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+<button type="button" class="btn-white" style="flex:1" onclick="copyLink()">Salin Link</button>
+<button type="button" class="btn-outline" style="flex:1;justify-content:center" onclick="openLink()">↗ Buka Website</button>
+</div>
+<button type="button" class="btn-outline" style="width:100%;margin-top:8px;justify-content:center" onclick="shareWA()">Share ke WhatsApp</button>
+<div style="margin-top:12px;font-size:11px;color:#555">Website ini sudah full page berfungsi, semua link & tombol aktif. Bisa langsung share.</div>
+</div>
+</div>
+
+<script>
+// LOADING SCREEN LOGIC - awal cepet tengah lambat akhir cepet dikit
+(function(){
+let progress=0;
+const fill=document.getElementById('loadingFill');
+const text=document.getElementById('loadingText');
+const screen=document.getElementById('loadingScreen');
+function update(){
+  if(progress>=100){
+    text.textContent='100% SELESAI';
+    setTimeout(()=>{
+      screen.style.opacity='0';
+      setTimeout(()=>{screen.style.display='none'},500);
+    },300);
+    return;
+  }
+  let inc, delay;
+  if(progress<30){inc=3+Math.random()*2;delay=40} // awal cepet
+  else if(progress<75){inc=0.5+Math.random()*0.8;delay=120} // tengah lambat
+  else{inc=2+Math.random()*1.5;delay=50} // akhir cepet dikit
+  progress=Math.min(100,progress+inc);
+  fill.style.width=progress+'%';
+  text.textContent=Math.floor(progress)+'% MEMUAT...';
+  setTimeout(update,delay);
+}
+setTimeout(update,200);
+})();
+
+// EDITOR LOGIC
+const editor=document.getElementById('editor');
+const previewFrame=document.getElementById('previewFrame');
+const siteNameInput=document.getElementById('siteName');
+const slugInput=document.getElementById('slug');
+
+function updatePreview(){
+const name=siteNameInput.value||'Untitled';
+const slug=slugInput.value||'untitled';
+document.getElementById('previewName').textContent=name;
+document.getElementById('previewUrl').textContent='html2web.site/'+slug;
+document.getElementById('stickyUrl').textContent='html2web.site/'+slug;
+document.getElementById('urlPreview').textContent='html2web.site/'+slug;
+let html=editor.value;
+if(!html.includes('<title>')){
+  html=html.replace('<head>','<head><title>'+name+'</title>');
+  if(!html.includes('<head>')) html='<title>'+name+'</title>\n'+html;
+}else{
+  html=html.replace(/<title>.*?<\/title>/,'<title>'+name+'</title>');
+}
+previewFrame.srcdoc=html;
+document.getElementById('charCount').textContent=editor.value.length;
+document.getElementById('fileSize').textContent=(new Blob([editor.value]).size/1024).toFixed(1)+' kb';
+try{localStorage.setItem('html2web_code',editor.value)}catch(e){}
+}
+editor.addEventListener('input',updatePreview);
+siteNameInput.addEventListener('input',()=>{updateSlug(false);updatePreview()});
+slugInput.addEventListener('input',updatePreview);
+
+function updateSlug(auto=true){
+if(auto){
+const s=siteNameInput.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').substring(0,30);
+slugInput.value=s||'untitled';
+}
+updatePreview();
+}
+
+function handleFileSelect(e){
+const file=e.target.files[0];
+if(!file) return;
+const reader=new FileReader();
+reader.onload=function(ev){
+editor.value=ev.target.result;
+document.getElementById('fileInfo').style.display='block';
+document.getElementById('fileInfo').innerHTML='<div class=file-card><div><div style=font-weight:600>'+file.name+'</div><div class=badge>'+(file.size/1024).toFixed(1)+' kb</div></div><div style=display:flex;gap:6px><button type=button class=btn-upload-outline style=padding:6px 10px;font-size:11px onclick=document.getElementById("fileInput").click()>Ganti</button><button type=button class=btn-upload-outline style=padding:6px 10px;font-size:11px onclick=clearFile()>✕</button></div></div>';
+updatePreview();
+};
+reader.readAsText(file);
+}
+function handleDragOver(e){e.preventDefault();document.getElementById('uploadZone').classList.add('dragover')}
+function handleDragLeave(e){document.getElementById('uploadZone').classList.remove('dragover')}
+function handleDrop(e){
+e.preventDefault();
+document.getElementById('uploadZone').classList.remove('dragover');
+const file=e.dataTransfer.files[0];
+if(file){
+const dt=new DataTransfer();dt.items.add(file);
+document.getElementById('fileInput').files=dt.files;
+handleFileSelect({target:{files:[file]}});
+}
+}
+function clearFile(){document.getElementById('fileInfo').style.display='none';document.getElementById('fileInput').value='';}
+function loadSample(){
+editor.value=`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{font-family:sans-serif;padding:40px;max-width:800px;margin:0 auto}h1{font-size:48px;letter-spacing:-2px}.btn{background:#111;color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;display:inline-block}</style></head><body><h1>Toko Online 🔥</h1><p>Full page berfungsi 100%</p><br><a class="btn" href="https://wa.me/6281234567890">Chat WhatsApp</a> <a class="btn" style="background:#E1306C;margin-left:8px" href="https://instagram.com">Instagram</a></body></html>`;
+updatePreview();
+}
+function clearCode(){
+if(editor.value.trim()===''){return}
+if(confirm('Yakin mau bersihin kode HTML? Kode akan hilang permanen 🗑️')){
+editor.value='';
+clearFile();
+updatePreview();
+try{localStorage.removeItem('html2web_code')}catch(e){}
+}
+}
+function downloadHTML(){
+let html=editor.value;
+const blob=new Blob([html],{type:'text/html'});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download=(slugInput.value||'website')+'.html';
+a.click();
+}
+function openFullPage(){
+let html=editor.value;
+const name=siteNameInput.value||'Website';
+if(html.includes('<title>')) html=html.replace(/<title>.*?<\/title>/,'<title>'+name+'</title>');
+else html=html.replace('<head>','<head><title>'+name+'</title>');
+const blob=new Blob([html],{type:'text/html'});
+const url=URL.createObjectURL(blob);
+window.open(url,'_blank');
+}
+function copyPreviewLink(){
+let html=editor.value;
+const blob=new Blob([html],{type:'text/html'});
+const url=URL.createObjectURL(blob);
+navigator.clipboard.writeText(url).then(()=>alert('Link blob disalin! Buka di tab baru untuk full page.')).catch(()=>prompt('Copy link:',url));
+}
+function publish(){
+let html=editor.value;
+const name=siteNameInput.value||'Untitled';
+const slug=slugInput.value||'untitled';
+if(!html.trim()){alert('Kode HTML masih kosong!');return}
+if(html.includes('<title>')) html=html.replace(/<title>.*?<\/title>/,'<title>'+name+'</title>');
+else html=html.replace('<head>','<head><title>'+name+'</title>');
+try{
+const encoded=btoa(unescape(encodeURIComponent(html)));
+const base=window.location.href.split('#')[0].split('?')[0];
+const link=base+'#web='+slug+'&data='+encoded;
+document.getElementById('publicLink').value=link;
+document.getElementById('modal').classList.add('active');
+try{localStorage.setItem('html2web_'+slug,html)}catch(e){}
+}catch(e){alert('Gagal publish: '+e.message)}
+}
+function closeModal(){document.getElementById('modal').classList.remove('active')}
+function copyLink(){const i=document.getElementById('publicLink');i.select();document.execCommand('copy');alert('Link disalin! Website full functional siap share.')}
+function openLink(){window.open(document.getElementById('publicLink').value,'_blank')}
+function shareWA(){const link=document.getElementById('publicLink').value;window.open('https://wa.me/?text='+encodeURIComponent('Lihat website saya (full page berfungsi): '+link),'_blank')}
+
+// MEDSOS FOOTER LOGIC - jika ada yg buka yg lain tutup duluan sebelum yg lain buka
+(function(){
+let activeId=null;
+let timeout=null;
+const buttons=document.querySelectorAll('.medsos-btn');
+
+function openBtn(id){
+if(activeId===id) return;
+if(activeId!==null){
+  // tutup dulu yang lama
+  const prev=document.getElementById('btn-'+activeId);
+  if(prev) prev.classList.remove('expanded');
+  activeId=null;
+  clearTimeout(timeout);
+  timeout=setTimeout(()=>{
+    const next=document.getElementById('btn-'+id);
+    if(next){next.classList.add('expanded');activeId=id;}
+  },400);
+}else{
+  const next=document.getElementById('btn-'+id);
+  if(next){next.classList.add('expanded');activeId=id;}
+}
+}
+function closeBtn(id){
+if(activeId===id){
+  const el=document.getElementById('btn-'+id);
+  if(el) el.classList.remove('expanded');
+  activeId=null;
+}
+}
+
+buttons.forEach(btn=>{
+  const id=btn.dataset.id;
+  // lewati tengah = mouseenter icon-box
+  const icon=btn.querySelector('.icon-box');
+  icon.addEventListener('mouseenter',()=>openBtn(id));
+  btn.addEventListener('mouseleave',()=>closeBtn(id));
+  // touch
+  btn.addEventListener('touchstart',(e)=>{e.preventDefault();openBtn(id);},{passive:false});
+  // klik link tetap jalan
+  btn.addEventListener('click',(e)=>{
+    if(!btn.classList.contains('expanded')){
+      e.preventDefault();
+      openBtn(id);
+      setTimeout(()=>{window.open(btn.href,'_blank')},600);
+    }
+  });
+});
+
+// tutup kalo klik di luar
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('.medsos-btn') && activeId!==null){
+    const el=document.getElementById('btn-'+activeId);
+    if(el) el.classList.remove('expanded');
+    activeId=null;
+  }
+});
+})();
+
+// Viewer mode - jika buka via #web= link, tampilkan sebagai full page website berfungsi
+(function(){
+if(window.location.hash.includes('web=') && window.location.hash.includes('data=')){
+try{
+const hash=window.location.hash;
+const dataMatch=hash.match(/data=([^&]+)/);
+if(dataMatch){
+const decoded=decodeURIComponent(escape(atob(dataMatch[1])));
+document.open();document.write(decoded);document.close();
+}
+}catch(e){}
+}
+})();
+
+updatePreview();
+// Load saved
+try{
+const saved=localStorage.getItem('html2web_code');
+if(saved && saved.length>50){editor.value=saved;updatePreview()}
+}catch(e){}
+</script>
+</body>
+</html>
